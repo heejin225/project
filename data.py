@@ -5,7 +5,7 @@ import folium
 url = "https://raw.githubusercontent.com/사용자명/리포지토리명/브랜치명/파일이름.csv"
 
 # CSV 파일 불러오기
-df = pd.read_csv(url)
+df = pd.read_csv(url, encoding='utf-8')
 
 # 열 이름 확인 (혹시 공백이 있을 수 있으니 strip 처리)
 df.columns = df.columns.str.strip()
