@@ -24,8 +24,6 @@ except UnicodeDecodeError:
 
 df.columns = df.columns.str.strip()
 
-st.write("🔍 불러온 열 목록:", df.columns.tolist())
-
 # 3. 지도 중심 설정
 map_center = [df["와이좌표_값"].mean(), df["엑스좌표_값"].mean()]
 m = folium.Map(location=map_center, zoom_start=12)
