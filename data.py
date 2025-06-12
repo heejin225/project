@@ -3,37 +3,51 @@ import folium
 from streamlit_folium import st_folium
 import requests
 
-st.title("근처 치킨집")
+# ✅ 사용자 설정 부분
+KAKAO_API_KEY = "80e7fec3a76f98ee84b20d5ff29886b6"  # 예: KakaoAK abcdef1234567890
 
-keyword = st.text_input("검색할 키워드를 입력하세요 (예: 치킨)")
-
-# 기본 지도 중심 (서울특별시교육청 융합과학교육원 근처)
-m = folium.Map(location=[37.4688, 126.9595], zoom_start=13)
-
-KAKAO_REST_API_KEY = "80e7fec3a76f98ee84b20d5ff29886b6"
-
+# 카카오 장소 검색 함수
 def search_places(query):
     url = "https://dapi.kakao.com/v2/local/search/keyword.json"
-    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
-    params = {"query": query, "size": 15}  # 최대 15개 결과
+    headers = {
+        "Authorization": f"KakaoAK {KAKAO_API_KEY}"  # ← 중요!
+    }
+    params = {
+        "query": query,
+        "size": 10  # 최대 15개까지 가능
+    }
     response = requests.get(url, headers=headers, params=params)
     if response.status_code == 200:
-        return response.json().get("documents")
+        return response.json().get("documents", [])
     else:
-        st.error("API 요청 실패: " + str(response.status_code))
-        return None
+        st.error(f"카카오 API 요청 실패 (코드: {response.status_code})")
+        return []
+
+# 👉 스트림릿 UI
+st.title("📍 카카오 API로 음식점 검색하기")
+
+keyword = st.text_input("검색할 음식 키워드를 입력하세요 (예: 치킨, 피자, 삼겹살 등)", value="치킨")
+
+# 초기 지도: 서울 시청
+m = folium.Map(location=[37.4688, 126.9595], zoom_start=13)
 
 if keyword:
-    places = search_places(keyword)
-    if places:
-        for place in places:
+    results = search_places(keyword)
+    if results:
+        first = results[0]
+        m.location = [float(first['y']), float(first['x'])]  # 첫 장소 중심
+        for place in results:
+            name = place['place_name']
             lat = float(place['y'])
             lon = float(place['x'])
-            name = place['place_name']
-            folium.Marker([lat, lon], popup=name).add_to(m)
-        # 지도 중심을 첫 번째 장소로 이동
-        m.location = [float(places[0]['y']), float(places[0]['x'])]
+            addr = place.get('road_address_name', '')
+            folium.Marker(
+                [lat, lon],
+                popup=f"{name}<br>{addr}",
+                tooltip=name
+            ).add_to(m)
     else:
         st.warning("검색 결과가 없습니다.")
 
+# 지도 출력
 st_folium(m, width=700, height=500)
