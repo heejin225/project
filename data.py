@@ -2,7 +2,7 @@ import pandas as pd
 import folium
 
 # GitHub raw CSV 링크
-url = "https://github.com/heejin225/project/blob/main/%EC%84%9C%EC%9A%B8%EC%8B%9C%20%EC%83%81%EA%B6%8C%EB%B6%84%EC%84%9D%EC%84%9C%EB%B9%84%EC%8A%A4(%EC%98%81%EC%97%AD-%EC%83%81%EA%B6%8C).csv"
+url = "https://raw.githubusercontent.com/heejin225/project/main/서울시%20상권분석서비스(영역-상권).csv"
 
 # CSV 파일 불러오기
 df = pd.read_csv(url, encoding='utf-8')
