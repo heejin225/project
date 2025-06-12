@@ -10,7 +10,6 @@ st.set_page_config(page_title="서울시 상권 지도", layout="wide")
 
 st.title("📍 서울시 상권 지도 시각화")
 st.markdown("GitHub에 올린 CSV 데이터를 불러와 folium으로 지도에 표시합니다.")
-st.write("🔍 불러온 열 목록:", df.columns.tolist())
 
 # 1. GitHub 파일명과 경로 설정
 filename = "서울시 상권분석서비스(영역-상권).csv"
@@ -22,6 +21,10 @@ try:
     df = pd.read_csv(encoded_url, encoding='cp949')
 except UnicodeDecodeError:
     df = pd.read_csv(encoded_url, encoding='utf-8-sig')
+
+df.columns = df.columns.str.strip()
+
+st.write("🔍 불러온 열 목록:", df.columns.tolist())
 
 # 3. 지도 중심 설정
 map_center = [df["와이좌표값"].mean(), df["엑스좌표값"].mean()]
