@@ -1,32 +1,54 @@
+# streamlit_app.py
+
+import streamlit as st
 import pandas as pd
 import folium
+from urllib.parse import quote
+from streamlit_folium import st_folium
 
-# GitHub raw CSV 링크
-url = "https://raw.githubusercontent.com/heejin225/project/main/서울시%20상권분석서비스(영역-상권).csv"
+st.set_page_config(page_title="서울시 상권 지도", layout="wide")
 
-# CSV 파일 불러오기
-df = pd.read_csv(url, encoding='utf-8')
+st.title("📍 서울시 상권 지도 시각화")
+st.markdown("GitHub에 올린 CSV 데이터를 불러와 folium으로 지도에 표시합니다.")
 
-# 열 이름 확인 (혹시 공백이 있을 수 있으니 strip 처리)
-df.columns = df.columns.str.strip()
+# 1. GitHub 파일명과 경로 설정
+filename = "서울시 상권분석서비스(영역-상권).csv"
+base_url = "https://raw.githubusercontent.com/heejin225/project/main/"
+encoded_url = base_url + quote(filename)
 
-# folium 지도 중심을 전체 좌표의 평균으로 설정
+# 2. CSV 불러오기 (인코딩 시도)
+try:
+    df = pd.read_csv(encoded_url, encoding='cp949')
+except UnicodeDecodeError:
+    df = pd.read_csv(encoded_url, encoding='utf-8-sig')
+
+# 3. 지도 중심 설정
 map_center = [df["와이좌표값"].mean(), df["엑스좌표값"].mean()]
 m = folium.Map(location=map_center, zoom_start=12)
 
-# 마커 추가
+# 4. 자치구 선택 필터 추가
+gu_list = df["자치구코드명"].dropna().unique()
+selected_gu = st.selectbox("자치구를 선택하세요", ["전체"] + sorted(gu_list.tolist()))
+
+# 5. 필터링
+if selected_gu != "전체":
+    df = df[df["자치구코드명"] == selected_gu]
+
+# 6. 지도에 마커 추가
 for _, row in df.iterrows():
-    popup_text = f"""
-    상권명: {row['상권코드명']}<br>
-    행정동: {row['행정동코드명']}<br>
-    자치구: {row['자치구코드명']}
-    """
-    folium.Marker(
+    popup = f"""<b>상권명:</b> {row['상권코드명']}<br>
+                <b>행정동:</b> {row['행정동코드명']}<br>
+                <b>자치구:</b> {row['자치구코드명']}<br>
+                <b>면적:</b> {row['영역면적']:,}㎡"""
+    folium.CircleMarker(
         location=[row["와이좌표값"], row["엑스좌표값"]],
-        popup=folium.Popup(popup_text, max_width=300),
-        icon=folium.Icon(color="green", icon="info-sign")
+        radius=5,
+        popup=popup,
+        color="blue",
+        fill=True,
+        fill_color="cyan",
+        fill_opacity=0.7
     ).add_to(m)
 
-# 지도 저장
-m.save("commercial_area_map.html")
-print("✅ 지도 저장 완료: commercial_area_map.html")
+# 7. Streamlit에서 지도 출력
+st_data = st_folium(m, width=900, height=600)
