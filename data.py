@@ -1,56 +1,39 @@
-# streamlit_app.py
-
 import streamlit as st
-import pandas as pd
 import folium
-from urllib.parse import quote
 from streamlit_folium import st_folium
+import requests
 
-st.set_page_config(page_title="서울시 상권 지도", layout="wide")
+st.title("근처 치킨집")
 
-st.title("📍 서울시 상권 지도 시각화")
-st.markdown("GitHub에 올린 CSV 데이터를 불러와 folium으로 지도에 표시합니다.")
+keyword = st.text_치킨("검색할 키워드를 입력하세요 (예: 치킨)")
 
-# 1. GitHub 파일명과 경로 설정
-filename = "서울시 상권분석서비스(영역-상권).csv"
-base_url = "https://raw.githubusercontent.com/heejin225/project/main/"
-encoded_url = base_url + quote(filename)
+# 기본 지도 중심 (서울특별시교육청 융합과학교육원 근처)
+m = folium.Map(location=[37.4688, 126.9595], zoom_start=13)
 
-# 2. CSV 불러오기 (인코딩 시도)
-try:
-    df = pd.read_csv(encoded_url, encoding='cp949')
-except UnicodeDecodeError:
-    df = pd.read_csv(encoded_url, encoding='utf-8-sig')
+KAKAO_REST_API_KEY = "80e7fec3a76f98ee84b20d5ff29886b6"
 
-df.columns = df.columns.str.strip()
+def search_places(query):
+    url = "https://dapi.kakao.com/v2/local/search/keyword.json"
+    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
+    params = {"query": query, "size": 15}  # 최대 15개 결과
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        return response.json().get("documents")
+    else:
+        st.error("API 요청 실패: " + str(response.status_code))
+        return None
 
-# 3. 지도 중심 설정
-map_center = [df["와이좌표_값"].mean(), df["엑스좌표_값"].mean()]
-m = folium.Map(location=map_center, zoom_start=12)
+if keyword:
+    places = search_places(keyword)
+    if places:
+        for place in places:
+            lat = float(place['y'])
+            lon = float(place['x'])
+            name = place['place_name']
+            folium.Marker([lat, lon], popup=name).add_to(m)
+        # 지도 중심을 첫 번째 장소로 이동
+        m.location = [float(places[0]['y']), float(places[0]['x'])]
+    else:
+        st.warning("검색 결과가 없습니다.")
 
-# 4. 자치구 선택 필터 추가
-gu_list = df["자치구_코드_명"].dropna().unique()
-selected_gu = st.selectbox("자치구를 선택하세요", ["전체"] + sorted(gu_list.tolist()))
-
-# 5. 필터링
-if selected_gu != "전체":
-    df = df[df["자치구_코드_명"] == selected_gu]
-
-# 6. 지도에 마커 추가
-for _, row in df.iterrows():
-    popup = f"""<b>상권명:</b> {row['상권_코드_명']}<br>
-                <b>행정동:</b> {row['행정동_코드_명']}<br>
-                <b>자치구:</b> {row['자치구_코드_명']}<br>
-                <b>면적:</b> {row['영역_면적']:,}㎡"""
-    folium.CircleMarker(
-        location=[row["와이좌표_값"], row["엑스좌표_값"]],
-        radius=5,
-        popup=popup,
-        color="blue",
-        fill=True,
-        fill_color="cyan",
-        fill_opacity=0.7
-    ).add_to(m)
-
-# 7. Streamlit에서 지도 출력
-st_data = st_folium(m, width=900, height=600)
+st_folium(m, width=700, height=500)
