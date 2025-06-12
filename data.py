@@ -27,25 +27,25 @@ df.columns = df.columns.str.strip()
 st.write("🔍 불러온 열 목록:", df.columns.tolist())
 
 # 3. 지도 중심 설정
-map_center = [df["와이좌표값"].mean(), df["엑스좌표값"].mean()]
+map_center = [df["와이좌표_값"].mean(), df["엑스좌표_값"].mean()]
 m = folium.Map(location=map_center, zoom_start=12)
 
 # 4. 자치구 선택 필터 추가
-gu_list = df["자치구코드명"].dropna().unique()
+gu_list = df["자치구_코드_명"].dropna().unique()
 selected_gu = st.selectbox("자치구를 선택하세요", ["전체"] + sorted(gu_list.tolist()))
 
 # 5. 필터링
 if selected_gu != "전체":
-    df = df[df["자치구코드명"] == selected_gu]
+    df = df[df["자치구_코드_명"] == selected_gu]
 
 # 6. 지도에 마커 추가
 for _, row in df.iterrows():
-    popup = f"""<b>상권명:</b> {row['상권코드명']}<br>
-                <b>행정동:</b> {row['행정동코드명']}<br>
-                <b>자치구:</b> {row['자치구코드명']}<br>
-                <b>면적:</b> {row['영역면적']:,}㎡"""
+    popup = f"""<b>상권명:</b> {row['상권_코드_명']}<br>
+                <b>행정동:</b> {row['행정동_코드_명']}<br>
+                <b>자치구:</b> {row['자치구_코드_명']}<br>
+                <b>면적:</b> {row['영역_면적']:,}㎡"""
     folium.CircleMarker(
-        location=[row["와이좌표값"], row["엑스좌표값"]],
+        location=[row["와이좌표_값"], row["엑스좌표_값"]],
         radius=5,
         popup=popup,
         color="blue",
