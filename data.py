@@ -5,7 +5,7 @@ import requests
 
 st.title("근처 치킨집")
 
-keyword = st.text_치킨("검색할 키워드를 입력하세요 (예: 치킨)")
+keyword = st.text_input("검색할 키워드를 입력하세요 (예: 치킨)")
 
 # 기본 지도 중심 (서울특별시교육청 융합과학교육원 근처)
 m = folium.Map(location=[37.4688, 126.9595], zoom_start=13)
